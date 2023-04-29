@@ -1,0 +1,358 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "To-Do List Manager",
+        "description": "A simple in memory to-do list manager api definition, supports simple crud operations.",
+        "termsOfService": "tos.sample.com",
+        "contact": {
+            "name": "API Support",
+            "url": "www.sample.com",
+            "email": "exmple@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://localhost:8080/v1",
+            "description": "local test environment"
+        },
+        {
+            "url": "https://api.server.test/v1",
+            "description": "production environment"
+        }
+    ],
+    "components": {
+        "schemas": {
+            "uuid":{
+                "type": "string",
+                "format": "uuid"
+            },
+            "todo-list": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "My todo list"
+                    },
+                    "entries": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/todo-entry"
+                        }
+                    }
+                }
+            },
+            "todo-entry": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/uuid"
+                    },
+                    "list-id": {
+                        "$ref": "#/components/schemas/uuid"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "My ToDo Item name"
+                    },
+                    "description": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            }
+        }
+    },
+    "paths": {
+        "/todo-list/": {
+            "post": {
+                "description": "Adds a new todo list",
+                "tags": [
+                    "To-Do List"
+                ],
+                "parameters": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string",
+                                "example": "myNewList"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/todo-list"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get":{
+                "description": "Gets all todo lists",
+                "tags": [
+                    "To-Do List"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200":{
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema":{
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/todo-list"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        
+        "/todo-list/{list-id}": {
+            "get": {
+                "description": "Returns all list entries of a todo list",
+                "tags": [
+                    "To-Do List"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "list-id",
+                        "description": "UUID of the todo list",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type":"array",
+                                    "items":{
+                                           "$ref": "#/components/schemas/todo-entry"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Resource not found"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes a todo list with all entries",
+                "tags": [
+                    "To-Do List"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "list-id",
+                        "description": "UUID of the todo list",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Resource not found"
+                    }
+                }
+            },
+            "post": {
+                "description": "Adds an entry to an exisiting list",
+                "tags": [
+                    "To-Do List Entry"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "list-id",
+                        "description": "UUID of the todo list",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/uuid"
+                                }
+                            }
+                        }
+                    },
+                    "400":{
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "Resource not found"
+                    }
+                }
+            }
+        },
+        "/todo-list/{list-id}/{entry-id}": {
+            "get": {
+                "description": "Returns a single entry from a list",
+                "tags": [
+                    "To-Do List Entry"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "list-id",
+                        "description": "UUID of the todo list",
+                        "required": true,
+                        "schema" :{
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "entry-id",
+                        "description": "list entry id",
+                        "required": true,
+                        "schema":{
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json":{
+                                "schema": {
+                                    "$ref": "#/components/schemas/todo-entry"
+                                }
+                            }
+                        }
+                    },
+                    "404":{
+                        "description": "Resource not found"
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates an existing entry",
+                "tags": [
+                    "To-Do List Entry"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "list-id",
+                        "description": "UUID of the todo list",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "entry-id",
+                        "description": "List entry id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/todo-entry"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json":{
+                                "schema": {
+                                    "$ref": "#/components/schemas/todo-entry"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "Resource not found"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes an entry from a given list",
+                "tags": [
+                    "To-Do List Entry"
+                ],
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "list-id",
+                        "description": "UUID of the todo list",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "entry-id",
+                        "description": "List entry id",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Resource not found"
+                    }
+                }
+            }
+        }
+    }
+}
