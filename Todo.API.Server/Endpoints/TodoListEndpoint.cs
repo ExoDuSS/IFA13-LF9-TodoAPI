@@ -7,16 +7,18 @@ namespace Todo.API.Server.Endpoints
 {
     public class TodoListEndpoint : IEndpointDefinition
     {
-        private string TAG_LIST = "ToDo List";
-        private string TAG_ENTRY = "ToDo List Entry";
-        private string ENDPOINT = "/todo-list";
-        private string LIST_ENDPOINT = "/todo-list/{listId:guid}";
-        private string ENTRY_ENDPOINT = "/todo-list/{listid:guid}/entry/{entryId:guid}";
+        private static string TAG_LIST = "ToDo List";
+        private static string TAG_ENTRY = "ToDo List Entry";
+
+        private static string BASE_ROUTE_LIST = "/todo-list";
+        private static string ROUTE_LIST = $"{BASE_ROUTE_LIST}/{{listId:guid}}";
+        private static string BASE_ROUTE_ENTRY = $"{ROUTE_LIST}/entry";
+        private static string ROUTE_ENTRY = $"{BASE_ROUTE_ENTRY}/{{entryId:guid}}";
 
         public void DefineEndpoints(WebApplication app)
         {
             // todo list
-            app.MapPost(ENDPOINT, CreateTodoList)
+            app.MapPost(BASE_ROUTE_LIST, CreateTodoList)
                 .WithName("CreateTodoList")
                 .WithSummary("Create Todo List")
                 .WithDescription("Creates a new todo list")
@@ -35,44 +37,44 @@ namespace Todo.API.Server.Endpoints
                     return op;
                 });
 
-            app.MapGet(ENDPOINT, GetAllTodoLists)
+            app.MapGet(BASE_ROUTE_LIST, GetAllTodoLists)
                 .WithName("GetAllTodoLists")
                 .WithDescription("Returns all todo lists")
                 .WithTags(new[] { TAG_LIST })
                 .WithOpenApi();
 
-            app.MapGet(LIST_ENDPOINT, GetAllTodoListEntries)
+            app.MapGet(ROUTE_LIST, GetAllTodoListEntries)
                 .WithName("GetAllTodoListEntries")
                 .WithDescription("Returns all list entries of a todo list")
                 .WithTags(new[] { TAG_LIST })
                 .WithOpenApi();
 
-            app.MapDelete(LIST_ENDPOINT, DeleteTodoList)
+            app.MapDelete(ROUTE_LIST, DeleteTodoList)
                 .WithName("DeleteTodoListWithAllEntries")
                 .WithDescription("Removes a todo list with all entries")
                 .WithTags(new[] { TAG_LIST })
                 .WithOpenApi();
 
             // todos
-            app.MapPost(LIST_ENDPOINT, CreateTodoEntry)
+            app.MapPost(ROUTE_LIST, CreateTodoEntry)
                 .WithName("CreateTodoListEntry")
                 .WithDescription("Adds an entry to an exisiting list")
                 .WithTags(new[] { TAG_ENTRY })
                 .WithOpenApi();
 
-            app.MapGet(ENTRY_ENDPOINT, GetTodoEntry)
+            app.MapGet(ROUTE_ENTRY, GetTodoEntry)
                 .WithName("GetTodoListEntry")
                 .WithDescription("Returns a single entry from a list")
                 .WithTags(new[] { TAG_ENTRY })
                 .WithOpenApi();
 
-            app.MapPut(ENTRY_ENDPOINT, UpdateTodoEntry)
+            app.MapPut(ROUTE_ENTRY, UpdateTodoEntry)
                 .WithName("UpdateTodoListEntry")
                 .WithDescription("Updates an existing entry")
                 .WithTags(new[] { TAG_ENTRY })
                 .WithOpenApi();
 
-            app.MapDelete(ENTRY_ENDPOINT, RemoveTodoEntry)
+            app.MapDelete(ROUTE_ENTRY, RemoveTodoEntry)
                 .WithName("RemoveTodoEntryFromTodoList")
                 .WithDescription("Removes an entry from a given list")
                 .WithTags(new[] { TAG_ENTRY })

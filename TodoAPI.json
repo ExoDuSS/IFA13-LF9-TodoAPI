@@ -186,7 +186,9 @@
                         "description": "Resource not found"
                     }
                 }
-            },
+            }
+        },
+        "/todo-list/{list-id}/entry": {
             "post": {
                 "description": "Adds an entry to an exisiting list",
                 "tags": [
@@ -203,13 +205,33 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Go Shopping"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "In the Mall" 
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "OK",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/uuid"
+                                    "$ref": "#/components/schemas/todo-entry"
                                 }
                             }
                         }
@@ -223,7 +245,7 @@
                 }
             }
         },
-        "/todo-list/{list-id}/{entry-id}": {
+        "/todo-list/{list-id}/entry/{entry-id}": {
             "get": {
                 "description": "Returns a single entry from a list",
                 "tags": [
