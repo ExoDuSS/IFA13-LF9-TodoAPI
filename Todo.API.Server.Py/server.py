@@ -1,8 +1,10 @@
 import uuid
-import todo
-import todo_list
+import JSONUtils
 
+from TodoEntry import TodoEntry
+from TodoList import TodoList
 from flask import Flask, request, jsonify, abort
+from copy import copy
 
 app = Flask(__name__)
 
@@ -20,16 +22,15 @@ def apply_cors_header(response):
 # 
 # POST new list
 # GET all lists
-@app.route('/todo-list', methods=['POST', 'GET'])
+@app.route('/todo-list/', methods=['POST', 'GET'])
 def handle_base_list():
     if request.method == 'POST':
         new_list = request.get_json(force=True)
-        print('Got new list to be added: {}'.format(new_list))
-        new_list['id'] = uuid.uuid4()
-        TodoLists.append(new_list)
-        return jsonify(new_list), 200
-    else:
-        return jsonify(buildCompleteTodoLists()), 200
+        id = uuid.uuid4();
+        TodoLists[id] = TodoList(id,new_list['name'])
+        return jsonify(TodoLists[id]), 200
+    elif request.method == 'GET':
+        return jsonify(buildAllCompleteTodoList()), 200
 
 # define endpoint for getting and deleting existing todo lists
 # GET get all entries
@@ -37,18 +38,15 @@ def handle_base_list():
 @app.route('/todo-list/<listId>', methods=['GET', 'DELETE'])
 def handle_list(listId):
     # find todo list depending on given list id
-    list_item = None
-    for l in TodoLists:
-        if l['id'] == listId:
-            list_item = l
-            break
+    list_item = getList(listId)
     # if the given list id is invalid, return status code 404
     if not list_item:
         abort(404)
     if request.method == 'GET':
         # find all todo entries for the todo list with the given id
         print('Returning todo list...')
-        return jsonify([i for i in Todos if i['listId'] == listId])
+        return jsonify(buildCompleteTodoList())
+        #return jsonify([i for i in Todos if i['listId'] == listId])
     elif request.method == 'DELETE':
         # delete list with given id
         print('Deleting todo list...')
@@ -78,24 +76,15 @@ def handle_base_entry(listId):
 # GET return an entry
 # PUT update an entry
 # DELETE remove an entry
-@app.route('/todo-list/<listId>/entry/{entryId}', methods=['GET','PUT','DELETE'])
+@app.route('/todo-list/<listId>/entry/<entryId>', methods=['GET','PUT','DELETE'])
 def handle_entry(listId, entryId):
     # find todo list depending on given list id
-    list_item = None
-    for l in TodoLists:
-        if l['id'] == listId:
-            list_item = l
-            break
+    list_item = getList(listId)
     # if the given list id is invalid, return status code 404
     if not list_item:
         abort(404)
 
-    entry_item = None
-    for e in Todos:
-        if e['id'] == entryId and e['listId'] == listId:
-            entry_item = e
-            break
-    
+    entry_item = getEntry(entryId)
     if not entry_item:
         abort(404)
     
@@ -104,43 +93,62 @@ def handle_entry(listId, entryId):
     elif request.method == 'PUT':
         update_entry = request.get_json(force=True)
 
-        Todos[entryId]['name'] = update_entry['name']
-        Todos[entryId]['description'] = update_entry['description']
+        Todos[entryId].Name = update_entry['name']
+        Todos[entryId].Description = update_entry['description']
 
         return jsonify(Todos[entryId]), 200
     elif request.method == 'DELETE':
         Todos.remove(entryId)
 
-
 # helper methods
-def buildCompleteTodoLists():
-    complete_list = []
-    for list in TodoLists:
-        complete_list.append(buildTodoList(list))
-    return complete_list
+def buildAllCompleteTodoList():
+    complete_lists = []
+    for key in TodoLists:
+        complete_lists.append(buildCompleteTodoList(key))
+    return complete_lists
 
-def buildCompleteTodoList(id):
-    list_entries = []
-    for entry in Todos:
-        if entry['listId'] == id:
-            list_entries.append(entry)
-    list = TodoLists[id]
-    list['entries'] = list_entries
+def buildCompleteTodoList(list_id):
+    list = getList(list_id)
+
+    if not list:
+        return None
+
+    list.Entries = []
+    for key in Todos:
+        if Todos[key].ListId == list_id:
+            list.Entries.append(Todos[key])
     return list
 
-def buildTodoList(list):
-    entries = []
-    for entry in Todos:
-        if entry['listId'] == list['id']:
-            entries.append(entry)
-    list['entries'] = entries
-    return list
+def removeTodoList(list_id):
+    if listExists(list_id):
+        del TodoLists[list_id]
+        for key in Todos:
+            if Todos[key].ListId == list_id:
+                del Todos[key]
 
-def removeTodoList(id):
-    for t in Todos:
-        if t['listId'] == id:
-            Todos.remove(t)
-    TodoLists.remove(TodoLists[id])
+def getList(list_id):
+    if listExists(list_id):
+        return copy(TodoLists[list_id])
+    else:
+        return None
+
+def getEntry(entry_id):
+    if entryExists(entry_id):
+        return Todos[entry_id]
+    else:
+        return None
+
+def listExists(list_id):
+    for k in TodoLists:
+        if k == list_id:
+            return True
+    return False
+
+def entryExists(entry_id):
+    for k in Todos:
+        if k == entry_id:
+            return True
+    return False;
 
 def addMockData():
     # create unique id for lists, entries
@@ -153,21 +161,23 @@ def addMockData():
     todo_4_id = uuid.uuid4()
 
     # define internal data structures with example data
-    todo_lists = [
-        {'id': todo_list_1_id, 'name': 'Einkaufsliste', 'entries': []},
-        {'id': todo_list_2_id, 'name': 'Arbeit', 'entries': []},
-        {'id': todo_list_3_id, 'name': 'Privat', 'entries': []},
-    ]
-    todos = [
-        {'id': todo_1_id, 'listId': todo_list_1_id , 'name': 'Milch', 'description': '3x'},
-        {'id': todo_2_id, 'listId': todo_list_1_id , 'name': 'Eier', 'description': '6x'},
-        {'id': todo_3_id, 'listId': todo_list_2_id , 'name': 'Snackbox auffüllen', 'description': 'Mit geilem Scheiß'},
-        {'id': todo_3_id, 'listId': todo_list_3_id , 'name': 'Sauber machen', 'description': 'Jetzt aber wirklich'},
-    ]
-
-    TodoLists.append(todo_lists)
-    Todos.append(todos)
+    global TodoLists
+    TodoLists = {
+        todo_list_1_id: TodoList(todo_list_1_id, 'Einkaufsliste'),
+        todo_list_2_id: TodoList(todo_list_1_id, 'Arbeit'),
+        todo_list_3_id: TodoList(todo_list_1_id, 'Privat')
+    }
+    global Todos
+    Todos = {
+        todo_1_id: TodoEntry(todo_list_1_id, 'Milch', '3x'),
+        todo_2_id: TodoEntry(todo_list_1_id, 'Eier', '6x'),
+        todo_3_id: TodoEntry(todo_list_2_id, 'Snackbox auffüllen', 'Mit geilem Scheiß'),
+        todo_4_id: TodoEntry(todo_list_3_id, 'Sauber machen', 'Jetzt aber wirklich!')
+    }
 
 if __name__ == '__main__':
+    addMockData()
     app.debug = True
+    app.json_encoder = JSONUtils.MyJsonEncoder
+    app.json_decoder = JSONUtils.MyJsonDecoder
     app.run(host='0.0.0.0', port=8080)
