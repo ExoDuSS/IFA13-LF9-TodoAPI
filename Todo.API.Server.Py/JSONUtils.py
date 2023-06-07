@@ -9,8 +9,8 @@ class MyJsonEncoder(json.JSONEncoder):
             return {"Id": obj.Id, "ListId": obj.ListId ,"Name": obj.Name , "Description": obj.Description}
         elif isinstance(obj, TodoList):
             return {"Id": obj.Id, "Name": obj.Name, "Entries": obj.Entries}
-        #elif isinstance(obj, list):
-        #    return [self.default(item) for item in obj]
+        elif isinstance(obj, list):
+            return [self.default(item) for item in obj]
         try:
             return json.JSONEncoder.default(self, obj)
         except TypeError:
